@@ -1,0 +1,132 @@
+{{- if .Values.clusterAutoscaler.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cluster-autoscaler
+  namespace: {{ .Values.clusterAutoscaler.namespace }}
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+    app: cluster-autoscaler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cluster-autoscaler
+  template:
+    metadata:
+      labels:
+        app: cluster-autoscaler
+    spec:
+      serviceAccountName: {{ .Values.clusterAutoscaler.serviceAccount.name }}
+      containers:
+        - name: cluster-autoscaler
+          image: {{ include "autoscaling.clusterAutoscaler.image" . }}
+          imagePullPolicy: {{ .Values.clusterAutoscaler.image.pullPolicy }}
+          command:
+            - ./cluster-autoscaler
+            - --v=4
+            - --stderrthreshold=info
+            - --cloud-provider=oci
+            - --nodes={{ .Values.clusterAutoscaler.nodePool.minNodes }}:{{ .Values.clusterAutoscaler.nodePool.maxNodes }}:{{ .Values.clusterAutoscaler.nodePool.nodePoolOCID }}
+            - --scale-down-delay-after-add={{ .Values.clusterAutoscaler.scaleDown.delayAfterAdd }}
+            - --scale-down-unneeded-time={{ .Values.clusterAutoscaler.scaleDown.unneededTime }}
+            - --unremovable-node-recheck-timeout={{ .Values.clusterAutoscaler.scaleDown.unremovableNodeRecheckTimeout }}
+          env:
+            - name: OCI_CLUSTER_ID
+              value: {{ .Values.clusterAutoscaler.oci.clusterId | quote }}
+            - name: OCI_NODE_POOL_ID
+              value: {{ .Values.clusterAutoscaler.oci.nodePoolId | quote }}
+          volumeMounts:
+            - name: ssl-certs
+              mountPath: /etc/ssl/certs/ca-certificates.crt
+              readOnly: true
+          {{- with .Values.clusterAutoscaler.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: ssl-certs
+          hostPath:
+            path: /etc/ssl/certs/ca-bundle.crt
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.clusterAutoscaler.serviceAccount.name }}
+  namespace: {{ .Values.clusterAutoscaler.namespace }}
+  {{- with .Values.clusterAutoscaler.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-autoscaler
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources:
+      - events
+      - endpoints
+    verbs: ["create", "patch"]
+  - apiGroups: [""]
+    resources:
+      - pods/eviction
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources:
+      - pods/status
+    verbs: ["update", "patch"]
+  - apiGroups: [""]
+    resources:
+      - nodes
+    verbs: ["watch", "list", "get", "update"]
+  - apiGroups: [""]
+    resources:
+      - namespaces
+      - pods
+      - services
+      - replicationcontrollers
+      - persistentvolumeclaims
+      - persistentvolumes
+    verbs: ["watch", "list", "get"]
+  - apiGroups: ["extensions"]
+    resources:
+      - replicasets
+      - daemonsets
+    verbs: ["watch", "list", "get"]
+  - apiGroups: ["policy"]
+    resources:
+      - poddisruptionbudgets
+    verbs: ["watch", "list"]
+  - apiGroups: ["apps"]
+    resources:
+      - daemonsets
+      - replicasets
+      - statefulsets
+    verbs: ["watch", "list", "get"]
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    verbs: ["list", "watch", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-autoscaler
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-autoscaler
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.clusterAutoscaler.serviceAccount.name }}
+    namespace: {{ .Values.clusterAutoscaler.namespace }}
+{{- end }}
+

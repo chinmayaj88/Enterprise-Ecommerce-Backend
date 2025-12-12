@@ -1,0 +1,42 @@
+# Production values for base resources
+
+namespaces:
+  enabled: true
+  
+  gatewayService:
+    enabled: true
+    labels:
+      environment: production
+  
+  authService:
+    enabled: true
+    labels:
+      environment: production
+  
+  monitoring:
+    enabled: true
+  
+  logging:
+    enabled: true
+  
+  production:
+    enabled: true
+  
+  staging:
+    enabled: false  # Disable in production
+  
+  development:
+    enabled: false  # Disable in production
+
+priorityClasses:
+  enabled: true
+  
+  critical:
+    enabled: true
+  
+  high:
+    enabled: true
+  
+  medium:
+    enabled: true
+

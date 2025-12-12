@@ -1,0 +1,38 @@
+{
+  "server": {
+    "port": 3009,
+    "env": "development",
+    "requestTimeout": 30000,
+    "shutdownTimeout": 30000,
+    "maxRequestSize": "10mb"
+  },
+  "database": {
+    "url": ""
+  },
+  "redis": {
+    "url": "",
+    "cacheTtl": 3600
+  },
+  "jwt": {
+    "secret": ""
+  },
+  "rateLimit": {
+    "windowMs": 900000,
+    "maxRequests": 100
+  },
+  "cors": {
+    "allowedOrigins": []
+  },
+  "logging": {
+    "level": "info"
+  },
+  "services": {
+    "orderServiceUrl": "http://localhost:3004",
+    "productServiceUrl": "http://localhost:3003"
+  },
+  "events": {
+    "publisherType": "mock",
+    "consumerType": "mock",
+    "ociRegion": "IN-HYDERABAD-1"
+  }
+}

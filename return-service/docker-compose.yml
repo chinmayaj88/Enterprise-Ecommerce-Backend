@@ -1,0 +1,81 @@
+services:
+  return-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce-return-service
+    ports:
+      - "${PORT:-3010}:3010"
+    environment:
+      - NODE_ENV=development
+      - PORT=3010
+      - DATABASE_URL=postgresql://return_user:return_pass@postgres:5432/return_db
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-dev-jwt-secret-minimum-32-characters-long}
+      - ORDER_SERVICE_URL=${ORDER_SERVICE_URL:-http://localhost:3004}
+      - PAYMENT_SERVICE_URL=${PAYMENT_SERVICE_URL:-http://localhost:3005}
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - return-service-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3010/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecommerce-return-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-return_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-return_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-return_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - return-postgres-data:/var/lib/postgresql/data
+      - ./prisma:/docker-entrypoint-initdb.d
+    networks:
+      - return-service-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-return_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: ecommerce-return-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - return-redis-data:/data
+    networks:
+      - return-service-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  return-postgres-data:
+    driver: local
+  return-redis-data:
+    driver: local
+
+networks:
+  return-service-network:
+    driver: bridge
+

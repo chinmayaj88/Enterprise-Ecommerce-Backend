@@ -1,0 +1,203 @@
+# Default values for monitoring stack
+# This is a YAML-formatted file.
+
+# Global configuration
+global:
+  namespace: monitoring
+
+# Prometheus configuration
+prometheus:
+  enabled: true
+  namespace: monitoring
+  
+  server:
+    persistentVolume:
+      enabled: true
+      size: 50Gi
+      storageClass: ""
+    
+    retention: 30d
+    retentionSize: ""
+    
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+    
+    service:
+      type: ClusterIP
+      port: 9090
+    
+    serviceAccount:
+      create: true
+      name: prometheus
+    
+    # Prometheus configuration
+    config:
+      global:
+        scrape_interval: 15s
+        evaluation_interval: 15s
+        external_labels:
+          cluster: 'ecommerce-production'
+          environment: 'production'
+      
+      alerting:
+        alertmanagers:
+          - static_configs:
+              - targets:
+                - alertmanager.monitoring.svc.cluster.local:9093
+      
+      rule_files:
+        - /etc/prometheus/alerts.yaml
+      
+      scrape_configs:
+        - job_name: 'prometheus'
+          static_configs:
+            - targets: ['localhost:9090']
+        
+        - job_name: 'kubernetes-apiservers'
+          kubernetes_sd_configs:
+            - role: endpoints
+          scheme: https
+          tls_config:
+            ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+              action: keep
+              regex: default;kubernetes;https
+        
+        - job_name: 'kubernetes-nodes'
+          kubernetes_sd_configs:
+            - role: node
+          scheme: https
+          tls_config:
+            ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+          relabel_configs:
+            - action: labelmap
+              regex: __meta_kubernetes_node_label_(.+)
+        
+        - job_name: 'kubernetes-pods'
+          kubernetes_sd_configs:
+            - role: pod
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+              action: keep
+              regex: true
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+              action: replace
+              target_label: __metrics_path__
+              regex: (.+)
+            - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+              action: replace
+              regex: ([^:]+)(?::\d+)?;(\d+)
+              replacement: $1:$2
+              target_label: __address__
+            - action: labelmap
+              regex: __meta_kubernetes_pod_label_(.+)
+            - source_labels: [__meta_kubernetes_namespace]
+              target_label: namespace
+            - source_labels: [__meta_kubernetes_pod_name]
+              target_label: pod
+
+# Grafana configuration
+grafana:
+  enabled: true
+  namespace: monitoring
+  
+  admin:
+    user: admin
+    password: admin  # Change in production!
+    existingSecret: ""
+  
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  
+  service:
+    type: ClusterIP
+    port: 3000
+  
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://prometheus-server.monitoring.svc.cluster.local:9090
+          access: proxy
+          isDefault: true
+        - name: Loki
+          type: loki
+          url: http://loki.logging.svc.cluster.local:3100
+          access: proxy
+  
+  ingress:
+    enabled: false
+    className: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    hosts:
+      - host: grafana.yourdomain.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: grafana-tls-secret
+        hosts:
+          - grafana.yourdomain.com
+
+# Alertmanager configuration
+alertmanager:
+  enabled: true
+  namespace: monitoring
+  
+  persistentVolume:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  
+  config:
+    global:
+      resolve_timeout: 5m
+    
+    route:
+      group_by: ['alertname']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 12h
+      receiver: 'default'
+      routes:
+        - match:
+            severity: critical
+          receiver: 'critical'
+    
+    receivers:
+      - name: 'default'
+      - name: 'critical'
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  
+  service:
+    type: ClusterIP
+    port: 9093
+

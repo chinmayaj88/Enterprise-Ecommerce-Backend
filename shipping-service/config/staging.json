@@ -1,0 +1,13 @@
+{
+  "server": {
+    "port": 3009,
+    "env": "staging"
+  },
+  "logging": {
+    "level": "info"
+  },
+  "events": {
+    "publisherType": "oci",
+    "consumerType": "oci"
+  }
+}

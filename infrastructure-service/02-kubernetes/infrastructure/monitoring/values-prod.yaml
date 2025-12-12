@@ -1,0 +1,56 @@
+# Production values for monitoring stack
+
+global:
+  namespace: monitoring
+
+prometheus:
+  enabled: true
+  server:
+    persistentVolume:
+      size: 100Gi  # Larger storage for production
+    retention: 90d  # Longer retention
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 4Gi
+      limits:
+        cpu: 4000m
+        memory: 8Gi
+
+grafana:
+  enabled: true
+  admin:
+    existingSecret: grafana-admin-secret  # Use secret in production
+  persistence:
+    size: 20Gi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  ingress:
+    enabled: true
+    hosts:
+      - host: grafana.yourdomain.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: grafana-tls-secret
+        hosts:
+          - grafana.yourdomain.com
+
+alertmanager:
+  enabled: true
+  persistentVolume:
+    size: 20Gi
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+

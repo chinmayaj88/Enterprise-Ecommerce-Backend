@@ -1,0 +1,9 @@
+{
+  "server": {
+    "env": "staging"
+  },
+  "logging": {
+    "level": "info"
+  }
+}
+

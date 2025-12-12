@@ -1,0 +1,17 @@
+apiVersion: v2
+name: user-service
+description: A Helm chart for User Service - User profile management service for ecommerce platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - user
+  - profile
+  - microservices
+  - ecommerce
+maintainers:
+  - name: DevOps Team
+home: https://github.com/yourorg/ecommerce
+sources:
+  - https://github.com/yourorg/ecommerce
+

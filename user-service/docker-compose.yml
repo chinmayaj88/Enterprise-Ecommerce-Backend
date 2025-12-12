@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: user-service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - user-service-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3002/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: user-service-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-user-service_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-user-service_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-user-service_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - user-service-postgres-data:/var/lib/postgresql/data
+    networks:
+      - user-service-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user-service_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: user-service-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - user-service-redis-data:/data
+    networks:
+      - user-service-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  user-service-postgres-data:
+  user-service-redis-data:
+
+networks:
+  user-service-network:
+    driver: bridge
+

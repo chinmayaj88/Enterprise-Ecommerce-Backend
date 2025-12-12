@@ -1,0 +1,47 @@
+# Staging environment values for return-service
+
+name: return-service
+namespace: ecommerce-staging
+
+image:
+  tag: "staging"
+
+replicaCount: 2
+
+oci:
+  compartmentId: "ecommerce-staging"
+  dynamicGroup: "ecommerce-return-service-staging"
+
+resources:
+  requests:
+    cpu: "200m"
+    memory: "512Mi"
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+priorityClassName: ""  # No priority class in staging
+
+labels:
+  environment: staging
+
+env:
+  NODE_ENV: staging
+
+ingress:
+  enabled: false
+
+monitoring:
+  enabled: true
+

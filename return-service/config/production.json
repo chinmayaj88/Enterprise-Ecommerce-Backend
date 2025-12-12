@@ -1,0 +1,16 @@
+{
+  "server": {
+    "env": "production"
+  },
+  "logging": {
+    "level": "warn"
+  },
+  "cors": {
+    "allowedOrigins": []
+  },
+  "events": {
+    "consumerType": "oci-queue",
+    "publisherType": "oci-streaming"
+  }
+}
+

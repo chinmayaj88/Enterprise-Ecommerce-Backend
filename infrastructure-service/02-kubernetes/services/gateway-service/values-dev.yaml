@@ -1,0 +1,46 @@
+# Development environment values for gateway-service
+
+name: gateway-service
+namespace: ecommerce-development
+
+image:
+  tag: "dev"
+
+replicaCount: 1
+
+oci:
+  compartmentId: "ecommerce-development"
+  dynamicGroup: "ecommerce-gateway-service-development"
+
+resources:
+  requests:
+    cpu: "200m"
+    memory: "512Mi"
+  limits:
+    cpu: "500m"
+    memory: "1Gi"
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 85
+
+podDisruptionBudget:
+  enabled: false  # Not needed for dev
+
+priorityClassName: ""  # No priority class in dev
+
+labels:
+  environment: development
+
+env:
+  NODE_ENV: development
+
+ingress:
+  enabled: false
+
+monitoring:
+  enabled: false
+

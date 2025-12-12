@@ -1,0 +1,87 @@
+# Default values for autoscaling components
+# This is a YAML-formatted file.
+
+# Global configuration
+global:
+  namespace: kube-system
+
+# Cluster Autoscaler configuration
+clusterAutoscaler:
+  enabled: true
+  namespace: kube-system
+  
+  image:
+    repository: registry.k8s.io/autoscaling/cluster-autoscaler
+    tag: v1.28.0
+    pullPolicy: IfNotPresent
+  
+  # OCI Configuration
+  oci:
+    clusterId: "<CLUSTER_ID>"
+    nodePoolId: "<NODE_POOL_ID>"
+    region: "IN-HYDERABAD-1"
+  
+  # Node pool configuration
+  nodePool:
+    minNodes: 2
+    maxNodes: 10
+    nodePoolOCID: "<NODE_POOL_OCID>"
+  
+  # Scaling configuration
+  scaleDown:
+    delayAfterAdd: 10m
+    unneededTime: 10m
+    unremovableNodeRecheckTimeout: 5m
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 300Mi
+    limits:
+      cpu: 100m
+      memory: 300Mi
+  
+  serviceAccount:
+    create: true
+    name: cluster-autoscaler
+    annotations:
+      oci.oraclecloud.com/oci-identity-dynamic-group: cluster-autoscaler
+
+# Vertical Pod Autoscaler (VPA) configuration
+vpa:
+  enabled: true
+  namespace: vpa-system
+  
+  # VPA Recommender
+  recommender:
+    enabled: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  
+  # VPA Updater
+  updater:
+    enabled: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+  
+  # VPA Admission Controller
+  admissionController:
+    enabled: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+

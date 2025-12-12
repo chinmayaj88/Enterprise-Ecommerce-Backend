@@ -1,0 +1,1189 @@
+openapi: 3.0.3
+info:
+  title: Gateway Service API
+  description: |
+    API Gateway for routing requests to microservices. All requests are proxied to the appropriate backend service.
+    
+    ## Authentication
+    Most endpoints require JWT authentication via Bearer token in the Authorization header.
+    Public endpoints (like product listings) do not require authentication.
+    
+    ## Rate Limiting
+    - Global rate limit: 100 requests per 15 minutes
+    - Auth endpoints: 5 requests per 15 minutes
+    
+    ## Circuit Breakers
+    The gateway implements circuit breakers to prevent cascading failures when backend services are unavailable.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: https://api.yourdomain.com
+    description: Production server
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Returns the health status of the gateway service and all backend services
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  status:
+                    type: string
+                    enum: [healthy, degraded]
+                  service:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+                  services:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceHealth'
+        '503':
+          description: Service is degraded or unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ready:
+    get:
+      summary: Readiness check
+      description: Returns the readiness status of the gateway service (for Kubernetes liveness probes)
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ready:
+                    type: boolean
+                  service:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '503':
+          description: Service is not ready
+
+  /health/services:
+    get:
+      summary: Detailed service health status
+      description: Returns detailed health status for all backend services
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service health information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  services:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceHealth'
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /metrics:
+    get:
+      summary: Prometheus metrics
+      description: Returns metrics in Prometheus format
+      tags:
+        - Monitoring
+      responses:
+        '200':
+          description: Metrics in Prometheus format
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /metrics/json:
+    get:
+      summary: Metrics in JSON format
+      description: Returns metrics in JSON format (legacy endpoint)
+      tags:
+        - Monitoring
+      responses:
+        '200':
+          description: Metrics in JSON format
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api-docs:
+    get:
+      summary: API Documentation (Swagger UI)
+      description: Interactive API documentation
+      tags:
+        - Documentation
+      responses:
+        '200':
+          description: Swagger UI interface
+
+  /api/v1/auth/{path}:
+    get:
+      summary: Proxy to auth-service (GET)
+      description: Routes GET requests to the authentication service. Public endpoints like login and register do not require authentication.
+      tags:
+        - Auth Service
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Auth service endpoint path (e.g., login, register, verify-email)
+      responses:
+        '200':
+          description: Proxied response from auth-service
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to auth-service (POST)
+      description: Routes POST requests to the authentication service
+      tags:
+        - Auth Service
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Request body (varies by endpoint)
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Proxied response from auth-service
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    put:
+      summary: Proxy to auth-service (PUT)
+      tags:
+        - Auth Service
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response from auth-service
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    delete:
+      summary: Proxy to auth-service (DELETE)
+      tags:
+        - Auth Service
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response from auth-service
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/security/{path}:
+    get:
+      summary: Proxy to security endpoints (GET)
+      description: Routes requests to security endpoints (requires authentication)
+      tags:
+        - Security
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to security endpoints (POST)
+      tags:
+        - Security
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/users/{path}:
+    get:
+      summary: Proxy to user-service (GET)
+      description: Routes requests to the user service (requires authentication)
+      tags:
+        - User Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User service endpoint path
+      responses:
+        '200':
+          description: Proxied response from user-service
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to user-service (POST)
+      tags:
+        - User Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    put:
+      summary: Proxy to user-service (PUT)
+      tags:
+        - User Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    delete:
+      summary: Proxy to user-service (DELETE)
+      tags:
+        - User Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/products/{path}:
+    get:
+      summary: Proxy to product-service (GET)
+      description: Routes requests to the product service (most routes are public, admin routes require auth)
+      tags:
+        - Product Service
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Product service endpoint path
+      responses:
+        '200':
+          description: Proxied response from product-service
+        '401':
+          description: Unauthorized (for admin routes)
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to product-service (POST)
+      tags:
+        - Product Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    put:
+      summary: Proxy to product-service (PUT)
+      tags:
+        - Product Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    delete:
+      summary: Proxy to product-service (DELETE)
+      tags:
+        - Product Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/categories/{path}:
+    get:
+      summary: Proxy to category endpoints (GET)
+      description: Routes requests to category endpoints (public, cacheable)
+      tags:
+        - Product Service
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to category endpoints (POST)
+      tags:
+        - Product Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/carts/{path}:
+    get:
+      summary: Proxy to cart-service (GET)
+      description: Routes requests to the cart service. Supports both authenticated and guest carts.
+      tags:
+        - Cart Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response from cart-service
+        '401':
+          description: Unauthorized (for merge endpoint)
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to cart-service (POST)
+      tags:
+        - Cart Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    put:
+      summary: Proxy to cart-service (PUT)
+      tags:
+        - Cart Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    delete:
+      summary: Proxy to cart-service (DELETE)
+      tags:
+        - Cart Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/orders/{path}:
+    get:
+      summary: Proxy to order-service (GET)
+      description: Routes requests to the order service (requires authentication)
+      tags:
+        - Order Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response from order-service
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to order-service (POST)
+      tags:
+        - Order Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/payments/{path}:
+    get:
+      summary: Proxy to payment-service (GET)
+      description: Routes requests to the payment service (requires authentication, except webhooks)
+      tags:
+        - Payment Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response from payment-service
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to payment-service (POST)
+      tags:
+        - Payment Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/payment-methods/{path}:
+    get:
+      summary: Proxy to payment methods (GET)
+      description: Routes requests to payment method endpoints (requires authentication)
+      tags:
+        - Payment Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to payment methods (POST)
+      tags:
+        - Payment Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    delete:
+      summary: Proxy to payment methods (DELETE)
+      tags:
+        - Payment Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/webhooks/{path}:
+    post:
+      summary: Payment webhooks
+      description: Webhook endpoints for payment providers (no authentication required, verified by signature)
+      tags:
+        - Payment Service
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Webhook processed
+        '400':
+          description: Invalid webhook
+        '503':
+          description: Service unavailable
+
+  /api/v1/coupons/{path}:
+    get:
+      summary: Proxy to coupon endpoints (GET)
+      description: Routes requests to coupon endpoints (public for GET, requires auth for management)
+      tags:
+        - Discount Service
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized (for POST/PUT/DELETE)
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to coupon endpoints (POST)
+      tags:
+        - Discount Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/promotions/{path}:
+    get:
+      summary: Proxy to promotion endpoints (GET)
+      description: Routes requests to promotion endpoints (public for GET, requires auth for management)
+      tags:
+        - Discount Service
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized (for POST/PUT/DELETE)
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to promotion endpoints (POST)
+      tags:
+        - Discount Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/discounts/{path}:
+    get:
+      summary: Proxy to discount endpoints (GET)
+      description: Routes requests to discount calculation/validation endpoints (public)
+      tags:
+        - Discount Service
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to discount endpoints (POST)
+      description: Apply discount endpoint (requires authentication)
+      tags:
+        - Discount Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/notifications/{path}:
+    get:
+      summary: Proxy to notification endpoints (GET)
+      description: Routes requests to notification endpoints (requires authentication)
+      tags:
+        - Notification Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to notification endpoints (POST)
+      tags:
+        - Notification Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/templates/{path}:
+    get:
+      summary: Proxy to notification templates (GET)
+      description: Routes requests to notification template endpoints (requires authentication, admin)
+      tags:
+        - Notification Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (requires admin role)
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to notification templates (POST)
+      tags:
+        - Notification Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/preferences/{path}:
+    get:
+      summary: Proxy to notification preferences (GET)
+      description: Routes requests to notification preference endpoints (requires authentication)
+      tags:
+        - Notification Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    put:
+      summary: Proxy to notification preferences (PUT)
+      tags:
+        - Notification Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/rates/{path}:
+    get:
+      summary: Proxy to shipping rates (GET)
+      description: Routes requests to shipping rate calculation endpoints (public)
+      tags:
+        - Shipping Service
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to shipping rates (POST)
+      tags:
+        - Shipping Service
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '503':
+          description: Service unavailable
+
+  /api/v1/shipments/{path}:
+    get:
+      summary: Proxy to shipment endpoints (GET)
+      description: Routes requests to shipment endpoints. Track by number is public, others require auth.
+      tags:
+        - Shipping Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to shipment endpoints (POST)
+      tags:
+        - Shipping Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/zones/{path}:
+    get:
+      summary: Proxy to shipping zones (GET)
+      description: Routes requests to shipping zone endpoints (public for GET, requires auth for management)
+      tags:
+        - Shipping Service
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized (for POST/PUT/DELETE)
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to shipping zones (POST)
+      tags:
+        - Shipping Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/methods/{path}:
+    get:
+      summary: Proxy to shipping methods (GET)
+      description: Routes requests to shipping method endpoints (public for GET, requires auth for management)
+      tags:
+        - Shipping Service
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized (for POST/PUT/DELETE)
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to shipping methods (POST)
+      tags:
+        - Shipping Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+  /api/v1/returns/{path}:
+    get:
+      summary: Proxy to return service (GET)
+      description: Routes requests to return service endpoints (requires authentication)
+      tags:
+        - Return Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+    post:
+      summary: Proxy to return service (POST)
+      tags:
+        - Return Service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '401':
+          description: Unauthorized
+        '503':
+          description: Service unavailable
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from the auth service
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Error message"
+        requestId:
+          type: string
+          description: Request ID for tracing
+        service:
+          type: string
+          description: Service name (for proxy errors)
+      required:
+        - success
+        - message
+
+    ServiceHealth:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Service name
+        healthy:
+          type: boolean
+          description: Whether the service is healthy
+        url:
+          type: string
+          description: Service URL
+        lastCheck:
+          type: string
+          format: date-time
+          description: Last health check timestamp
+        responseTime:
+          type: number
+          description: Response time in milliseconds
+      required:
+        - name
+        - healthy
+        - url

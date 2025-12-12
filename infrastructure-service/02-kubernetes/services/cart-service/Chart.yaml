@@ -1,0 +1,17 @@
+apiVersion: v2
+name: cart-service
+description: A Helm chart for Cart Service - Shopping cart management service for ecommerce platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - cart
+  - shopping
+  - microservices
+  - ecommerce
+maintainers:
+  - name: DevOps Team
+home: https://github.com/yourorg/ecommerce
+sources:
+  - https://github.com/yourorg/ecommerce
+

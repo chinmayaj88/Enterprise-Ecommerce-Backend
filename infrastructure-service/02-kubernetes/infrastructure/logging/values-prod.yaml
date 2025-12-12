@@ -1,0 +1,35 @@
+# Production values for logging stack
+
+global:
+  namespace: logging
+
+loki:
+  enabled: true
+  persistence:
+    size: 200Gi  # Larger storage for production
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+  config:
+    limits_config:
+      ingestion_rate_mb: 50
+      ingestion_burst_size_mb: 100
+      max_streams_per_user: 50000
+      max_query_series: 2000
+      querier:
+        max_concurrent: 50
+
+promtail:
+  enabled: true
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+

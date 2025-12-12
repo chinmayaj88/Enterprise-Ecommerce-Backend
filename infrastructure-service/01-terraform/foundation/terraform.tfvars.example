@@ -1,0 +1,58 @@
+# ============================================================================
+# TERRAFORM.TFVARS.EXAMPLE - Production Grade
+# ============================================================================
+# Copy this file to terraform.tfvars and fill in your actual values
+# terraform.tfvars is in .gitignore (never commit secrets!)
+# ============================================================================
+
+# Project Configuration
+project_name = "ecommerce"
+environment  = "production"  # or "staging" or "development"
+
+# OCI Configuration
+# Get these from OCI Console or OCI CLI
+oci_region       = "ap-mumbai-1"  # OCI region (e.g., ap-mumbai-1, us-ashburn-1, eu-frankfurt-1)
+oci_tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaa..."  # Your tenancy OCID
+
+# Compartment Configuration
+compartment_name        = "ecommerce-compartment"
+compartment_description = "E-commerce platform infrastructure compartment"
+
+# Networking Configuration
+vcn_cidr           = "10.0.0.0/16"
+public_subnet_cidr  = "10.0.1.0/24"
+private_subnet_cidr = "10.0.2.0/24"
+
+# Compute Configuration (OKE)
+oke_cluster_name    = "ecommerce-oke-cluster"
+node_pool_size      = 1        # Single node (can scale up later for HA)
+node_shape          = "VM.Standard.E4.Flex"
+node_ocpus          = 4        # CPU cores per node
+node_memory_gb      = 32       # Memory per node in GB
+kubernetes_version  = "v1.33.1"  # Supported versions: v1.31.1, v1.31.10, v1.32.1, v1.33.0, v1.33.1, v1.34.0, v1.34.1
+
+# Container Registry
+enable_container_registry = true
+registry_repositories     = ["gateway-service"]
+
+# Shared Data Services
+enable_shared_redis = true
+redis_node_count    = 3        # Minimum 3 for high availability
+redis_memory_gb     = 2        # Memory per Redis node (minimum 2GB required)
+
+# Security Configuration
+# ⚠️ WARNING: Restrict this in production!
+allowed_cidr_blocks = ["0.0.0.0/0"]  # Change to your office/home IP in production
+
+# Monitoring
+enable_monitoring  = true
+log_retention_days = 90  # Minimum 30 days for production
+
+# Tags
+tags = {
+  Project     = "ecommerce"
+  ManagedBy   = "terraform"
+  CostCenter  = "engineering"
+  Environment = "production"
+}
+

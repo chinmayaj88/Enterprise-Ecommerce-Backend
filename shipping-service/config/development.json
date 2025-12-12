@@ -1,0 +1,9 @@
+{
+  "server": {
+    "port": 3009,
+    "env": "development"
+  },
+  "logging": {
+    "level": "debug"
+  }
+}

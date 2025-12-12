@@ -1,0 +1,50 @@
+# ============================================================================
+# NOTIFICATION-SERVICE TERRAFORM VARIABLES - Example Configuration
+# ============================================================================
+# Copy this file to terraform.tfvars and fill in your values
+# NEVER commit terraform.tfvars to version control!
+# ============================================================================
+
+# Foundation References (get from foundation outputs)
+compartment_id      = "ocid1.compartment.oc1..xxxxx"
+cluster_id          = "ocid1.cluster.oc1.xxxxx"
+private_subnet_id   = "ocid1.subnet.oc1.xxxxx"
+vault_id            = "ocid1.vault.oc1.xxxxx"
+vault_master_key_id = "ocid1.key.oc1.xxxxx"
+oci_region          = "us-ashburn-1"
+oci_tenancy_ocid    = "ocid1.tenancy.oc1..xxxxx"
+cluster_endpoint    = "https://xxxxx.xxxxx.xxxxx.oraclecloud.com:6443"
+
+# Project Information
+project_name = "ecommerce"
+environment  = "production"
+service_name = "notification-service"
+
+# Kubernetes Configuration
+namespace       = "notification-service"
+service_replicas = 2
+
+# Secrets (sensitive - use strong values in production)
+# Generate database URL: postgresql://user:password@host:port/database
+database_url = "postgresql://notification_user:STRONG_PASSWORD@notification-db-host:5432/notification_db"
+
+# Generate Redis URL: redis://user:password@host:port
+redis_url = "redis://notification-redis-host:6379"
+
+# Notification Provider Secrets (get from provider dashboards)
+sendgrid_api_key    = "SG.xxxxx"  # Get from SendGrid Dashboard
+twilio_account_sid  = "ACxxxxx"   # Get from Twilio Console
+twilio_auth_token   = "xxxxx"     # Get from Twilio Console
+twilio_phone_number = "+1234567890"  # Optional: Your Twilio phone number
+
+# Service URLs (internal Kubernetes service names)
+auth_service_url = "http://auth-service:3001"
+
+# Tags
+tags = {
+  Project     = "ecommerce"
+  ManagedBy   = "terraform"
+  Service     = "notification-service"
+  Environment = "production"
+}
+

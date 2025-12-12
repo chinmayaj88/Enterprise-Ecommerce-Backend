@@ -1,0 +1,82 @@
+services:
+  order-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce-order-service
+    ports:
+      - "${PORT:-3005}:3005"
+    environment:
+      - NODE_ENV=development
+      - PORT=3005
+      - DATABASE_URL=postgresql://order_user:order_pass@postgres:5432/order_db
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-dev-jwt-secret-minimum-32-characters-long}
+      - CART_SERVICE_URL=${CART_SERVICE_URL:-http://localhost:3004}
+      - PRODUCT_SERVICE_URL=${PRODUCT_SERVICE_URL:-http://localhost:3003}
+      - USER_SERVICE_URL=${USER_SERVICE_URL:-http://localhost:3002}
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - order-service-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3005/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecommerce-order-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-order_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-order_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-order_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - order-postgres-data:/var/lib/postgresql/data
+      - ./prisma:/docker-entrypoint-initdb.d
+    networks:
+      - order-service-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-order_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: ecommerce-order-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - order-redis-data:/data
+    networks:
+      - order-service-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  order-postgres-data:
+    driver: local
+  order-redis-data:
+    driver: local
+
+networks:
+  order-service-network:
+    driver: bridge
+

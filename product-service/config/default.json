@@ -1,0 +1,33 @@
+{
+  "server": {
+    "port": 3003,
+    "env": "development",
+    "requestTimeout": 30000,
+    "shutdownTimeout": 30000,
+    "maxRequestSize": "10mb"
+  },
+  "database": {
+    "url": "postgresql://user:password@localhost:5432/product_db"
+  },
+  "jwt": {
+    "secret": "your-secret-key-change-in-production"
+  },
+  "redis": {
+    "url": "redis://localhost:6379"
+  },
+  "product": {
+    "maxSearchResults": 100,
+    "cacheTtl": 3600
+  },
+  "rateLimit": {
+    "windowMs": 900000,
+    "maxRequests": 100
+  },
+  "cors": {
+    "allowedOrigins": []
+  },
+  "logging": {
+    "level": "info"
+  }
+}
+

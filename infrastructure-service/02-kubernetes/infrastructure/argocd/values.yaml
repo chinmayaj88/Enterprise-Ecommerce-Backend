@@ -1,0 +1,120 @@
+# Default values for ArgoCD
+# This is a YAML-formatted file.
+
+# Global configuration
+global:
+  namespace: argocd
+
+# ArgoCD configuration
+argocd:
+  enabled: true
+  namespace: argocd
+  
+  # ArgoCD server configuration
+  server:
+    replicas: 2
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    
+    service:
+      type: ClusterIP
+      port: 80
+    
+    ingress:
+      enabled: false
+      className: nginx
+      annotations:
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+      hosts:
+        - host: argocd.yourdomain.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - secretName: argocd-tls-secret
+          hosts:
+            - argocd.yourdomain.com
+  
+  # Application Controller
+  controller:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  
+  # Repo Server
+  repoServer:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  
+  # Application Set Controller
+  applicationSet:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  
+  # Redis (for caching)
+  redis:
+    enabled: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  
+  # Configs
+  configs:
+    cm:
+      application.instanceLabelKey: argocd.argoproj.io/instance
+      application.statusBadge.enabled: "true"
+    params:
+      server.insecure: false
+      server.staticassets: true
+    rbac:
+      policy.default: role:readonly
+      policy.csv: |
+        p, role:org-admin, applications, *, */*, allow
+        p, role:org-admin, clusters, get, *, allow
+        p, role:org-admin, repositories, get, *, allow
+        p, role:org-admin, repositories, create, *, allow
+        p, role:org-admin, repositories, update, *, allow
+        p, role:org-admin, repositories, delete, *, allow
+        g, org-admin, role:admin
+    secret:
+      # Admin password (change in production!)
+      argocdServerAdminPassword: admin
+      # Secret key for session signing
+      argocdServerAdminPasswordMtime: "2024-01-01T00:00:00Z"
+  
+  # Notifications
+  notifications:
+    enabled: true
+  
+  # Dex (for SSO)
+  dex:
+    enabled: false
+

@@ -1,0 +1,12 @@
+{
+  "server": {
+    "port": 3008,
+    "env": "development"
+  },
+  "database": {
+    "url": "postgresql://discount_user:discount_pass@localhost:5433/discount_db"
+  },
+  "redis": {
+    "url": "redis://localhost:6380"
+  }
+}

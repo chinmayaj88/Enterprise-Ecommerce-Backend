@@ -1,0 +1,11 @@
+{
+  "server": {
+    "env": "production"
+  },
+  "logging": {
+    "level": "warn"
+  },
+  "cors": {
+    "allowedOrigins": []
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "server": {
+    "env": "production",
+    "requestTimeout": 30000,
+    "shutdownTimeout": 30000
+  },
+  "logging": {
+    "level": "info"
+  },
+  "cors": {
+    "allowedOrigins": []
+  }
+}
+

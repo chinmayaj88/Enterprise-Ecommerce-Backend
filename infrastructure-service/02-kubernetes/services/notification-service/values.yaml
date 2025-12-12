@@ -1,0 +1,294 @@
+# Default values for notification-service
+# This is a YAML-formatted file.
+
+# Service configuration
+name: notification-service
+fullNameOverride: ""
+namespace: notification-service
+
+# Image configuration
+image:
+  repository: <OCI_REGISTRY>/notification-service
+  pullPolicy: Always
+  tag: "latest"
+
+# Replica configuration
+replicaCount: 3
+
+# Deployment strategy
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 3009
+  targetPort: 3009
+  annotations: {}
+
+# Environment variables
+env:
+  NODE_ENV: production
+  PORT: "3009"
+  
+# Service URLs
+serviceUrls:
+  authService: "http://auth-service:3001"
+
+# Secrets configuration
+secrets:
+  name: notification-secrets
+  databaseUrl:
+    key: database-url
+  redisUrl:
+    key: redis-url
+  sendgridApiKey:
+    key: sendgrid-api-key
+  twilioAccountSid:
+    key: twilio-account-sid
+  twilioAuthToken:
+    key: twilio-auth-token
+  twilioPhoneNumber:
+    key: twilio-phone-number
+
+# OCI Configuration
+oci:
+  compartmentId: "<COMPARTMENT_ID_FROM_TERRAFORM_OUTPUT>"
+  region: "IN-HYDERABAD-1"
+  dynamicGroup: "ecommerce-notification-service-production"
+
+# Redis configuration
+redis:
+  url: "<REDIS_URL_FROM_TERRAFORM_OUTPUT>"
+
+# Resource limits
+resources:
+  requests:
+    cpu: "200m"
+    memory: "512Mi"
+  limits:
+    cpu: "2000m"
+    memory: "2Gi"
+
+# Health probes
+probes:
+  startup:
+    enabled: true
+    path: /health
+    port: 3009
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 30
+    successThreshold: 1
+  liveness:
+    enabled: true
+    path: /health
+    port: 3009
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+    successThreshold: 1
+  readiness:
+    enabled: true
+    path: /ready
+    port: 3009
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+    successThreshold: 1
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+# Pod security
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Priority class
+priorityClassName: critical-priority
+
+# Termination grace period
+terminationGracePeriodSeconds: 30
+
+# Service account
+serviceAccount:
+  create: true
+  name: notification-service-sa
+  annotations:
+    oci.oraclecloud.com/oci-identity-dynamic-group: "ecommerce-notification-service-production"
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# Horizontal Pod Autoscaler
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Min
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+      selectPolicy: Max
+
+# Network policy
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: gateway-service
+      ports:
+        - protocol: TCP
+          port: 3009
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: auth-service
+      ports:
+        - protocol: TCP
+          port: 3009
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: order-service
+      ports:
+        - protocol: TCP
+          port: 3009
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: payment-service
+      ports:
+        - protocol: TCP
+          port: 3009
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3009
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: database
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Authorization, Content-Type"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    oci.oraclecloud.com/oci-load-balancer-shape: "flexible"
+    oci.oraclecloud.com/oci-load-balancer-shape-flex-min: "10"
+    oci.oraclecloud.com/oci-load-balancer-shape-flex-max: "100"
+  hosts:
+    - host: notification.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: notification-tls-secret
+      hosts:
+        - notification.yourdomain.com
+
+# Pod affinity
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - notification
+          topologyKey: kubernetes.io/hostname
+
+# Prometheus monitoring
+monitoring:
+  enabled: true
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3009"
+    prometheus.io/path: "/metrics"
+
+# Labels
+labels:
+  app: notification
+  service: notification-service
+  environment: production
+
+# Annotations
+annotations: {}
+

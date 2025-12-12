@@ -1,0 +1,48 @@
+{
+  "server": {
+    "port": 3007,
+    "env": "development",
+    "requestTimeout": 30000,
+    "shutdownTimeout": 30000,
+    "maxRequestSize": "10mb"
+  },
+  "database": {
+    "url": ""
+  },
+  "redis": {
+    "url": "",
+    "cacheTtl": 3600
+  },
+  "jwt": {
+    "secret": ""
+  },
+  "rateLimit": {
+    "windowMs": 900000,
+    "maxRequests": 100
+  },
+  "cors": {
+    "allowedOrigins": []
+  },
+  "logging": {
+    "level": "info"
+  },
+  "notification": {
+    "emailProvider": "mock",
+    "smsProvider": "mock",
+    "pushProvider": "mock",
+    "retryAttempts": 3,
+    "retryDelayMs": 1000,
+    "maxNotificationsPerBatch": 100
+  },
+  "services": {
+    "authServiceUrl": "http://localhost:3001",
+    "userServiceUrl": "http://localhost:3002",
+    "frontendUrl": "http://localhost:3000"
+  },
+  "events": {
+    "publisherType": "mock",
+    "consumerType": "mock",
+    "ociRegion": "IN-HYDERABAD-1"
+  }
+}
+

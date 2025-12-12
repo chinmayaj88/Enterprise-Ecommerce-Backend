@@ -1,0 +1,38 @@
+{
+  "server": {
+    "port": 3005,
+    "env": "development",
+    "requestTimeout": 30000,
+    "shutdownTimeout": 30000,
+    "maxRequestSize": "10mb"
+  },
+  "database": {
+    "url": "postgresql://user:password@localhost:5432/order_db"
+  },
+  "services": {
+    "cart": "http://localhost:3004",
+    "product": "http://localhost:3003",
+    "user": "http://localhost:3002"
+  },
+  "order": {
+    "numberPrefix": "ORD",
+    "maxItems": 100
+  },
+  "jwt": {
+    "secret": "your-secret-key-change-in-production"
+  },
+  "redis": {
+    "url": "redis://localhost:6379"
+  },
+  "rateLimit": {
+    "windowMs": 900000,
+    "maxRequests": 100
+  },
+  "cors": {
+    "allowedOrigins": []
+  },
+  "logging": {
+    "level": "info"
+  }
+}
+

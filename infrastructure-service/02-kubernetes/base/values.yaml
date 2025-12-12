@@ -1,0 +1,110 @@
+# Default values for base resources
+# This is a YAML-formatted file.
+
+# Namespaces configuration
+namespaces:
+  enabled: true
+  
+  # Application namespaces
+  gatewayService:
+    enabled: true
+    name: gateway-service
+    labels:
+      app: gateway
+      service: gateway-service
+      environment: production
+      project: ecommerce
+      managed-by: helm
+    annotations:
+      description: "Namespace for gateway-service"
+  
+  authService:
+    enabled: true
+    name: auth-service
+    labels:
+      app: auth
+      service: auth-service
+      environment: production
+      project: ecommerce
+      managed-by: helm
+    annotations:
+      description: "Namespace for auth-service"
+  
+  # Infrastructure namespaces
+  monitoring:
+    enabled: true
+    name: monitoring
+    labels:
+      project: ecommerce
+      managed-by: helm
+    annotations:
+      description: "Namespace for monitoring stack"
+  
+  logging:
+    enabled: true
+    name: logging
+    labels:
+      project: ecommerce
+      managed-by: helm
+    annotations:
+      description: "Namespace for logging stack"
+  
+  # Environment namespaces
+  production:
+    enabled: true
+    name: ecommerce-production
+    labels:
+      environment: production
+      project: ecommerce
+      managed-by: helm
+    annotations:
+      description: "Production environment namespace"
+  
+  staging:
+    enabled: true
+    name: ecommerce-staging
+    labels:
+      environment: staging
+      project: ecommerce
+      managed-by: helm
+    annotations:
+      description: "Staging environment namespace"
+  
+  development:
+    enabled: true
+    name: ecommerce-development
+    labels:
+      environment: development
+      project: ecommerce
+      managed-by: helm
+    annotations:
+      description: "Development environment namespace"
+
+# Priority Classes configuration
+priorityClasses:
+  enabled: true
+  
+  critical:
+    enabled: true
+    name: critical-priority
+    value: 2000
+    globalDefault: false
+    description: "Critical priority for gateway-service and auth-service (highest priority)"
+    preemptionPolicy: PreemptLowerPriority
+  
+  high:
+    enabled: true
+    name: high-priority
+    value: 1000
+    globalDefault: false
+    description: "High priority for important services"
+    preemptionPolicy: PreemptLowerPriority
+  
+  medium:
+    enabled: true
+    name: medium-priority
+    value: 500
+    globalDefault: false
+    description: "Medium priority for standard services"
+    preemptionPolicy: PreemptLowerPriority
+

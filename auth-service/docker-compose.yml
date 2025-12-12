@@ -1,0 +1,80 @@
+services:
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce-auth-service
+    ports:
+      - "${PORT:-3001}:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=postgresql://auth_user:auth_pass@postgres:5432/auth_db
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-dev-jwt-secret-minimum-32-characters-long}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-dev-refresh-secret-minimum-32-characters-long}
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - auth-service-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecommerce-auth-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-auth_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-auth_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-auth_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - auth-postgres-data:/var/lib/postgresql/data
+      - ./prisma:/docker-entrypoint-initdb.d
+    networks:
+      - auth-service-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-auth_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: ecommerce-auth-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - auth-redis-data:/data
+    networks:
+      - auth-service-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  auth-postgres-data:
+    driver: local
+  auth-redis-data:
+    driver: local
+
+networks:
+  auth-service-network:
+    driver: bridge
+

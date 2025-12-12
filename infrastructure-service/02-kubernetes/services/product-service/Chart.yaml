@@ -1,0 +1,17 @@
+apiVersion: v2
+name: product-service
+description: A Helm chart for Product Service - Product catalog management service for ecommerce platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - product
+  - catalog
+  - microservices
+  - ecommerce
+maintainers:
+  - name: DevOps Team
+home: https://github.com/yourorg/ecommerce
+sources:
+  - https://github.com/yourorg/ecommerce
+

@@ -1,0 +1,9 @@
+{
+  "server": {
+    "env": "development"
+  },
+  "logging": {
+    "level": "debug"
+  }
+}
+

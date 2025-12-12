@@ -1,0 +1,24 @@
+# ============================================================================
+# BACKEND CONFIGURATION - Production Grade
+# ============================================================================
+# Copy this to backend.tfvars and fill in your actual values
+# Use this file when initializing Terraform: terraform init -backend-config=backend.tfvars
+# ============================================================================
+
+# OCI Object Storage Configuration
+bucket   = "terraform-state"
+key      = "foundation/terraform.tfstate"
+region   = "ap-mumbai-1"
+
+# OCI Object Storage endpoint for ap-mumbai-1
+# Replace <namespace> with your actual OCI namespace
+# Get namespace from OCI Console: Object Storage → Bucket Details → Namespace
+# Or use: oci os ns get (if OCI CLI is configured)
+endpoint = "https://<namespace>.compat.objectstorage.ap-mumbai-1.oraclecloud.com"
+
+# OCI-specific settings (required for S3-compatible API)
+skip_region_validation      = true
+skip_credentials_validation  = true
+skip_metadata_api_check      = true
+force_path_style             = true
+

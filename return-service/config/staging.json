@@ -1,0 +1,14 @@
+{
+  "server": {
+    "port": 3010,
+    "env": "staging"
+  },
+  "logging": {
+    "level": "info"
+  },
+  "events": {
+    "consumerType": "oci-queue",
+    "publisherType": "oci-streaming"
+  }
+}
+

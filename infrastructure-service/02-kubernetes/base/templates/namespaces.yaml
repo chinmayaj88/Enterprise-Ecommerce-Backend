@@ -1,0 +1,121 @@
+{{- if .Values.namespaces.enabled }}
+{{- if .Values.namespaces.gatewayService.enabled }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespaces.gatewayService.name }}
+  labels:
+    {{- include "base.labels" . | nindent 4 }}
+    {{- with .Values.namespaces.gatewayService.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.namespaces.gatewayService.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+
+{{- if .Values.namespaces.authService.enabled }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespaces.authService.name }}
+  labels:
+    {{- include "base.labels" . | nindent 4 }}
+    {{- with .Values.namespaces.authService.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.namespaces.authService.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+
+{{- if .Values.namespaces.monitoring.enabled }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespaces.monitoring.name }}
+  labels:
+    {{- include "base.labels" . | nindent 4 }}
+    {{- with .Values.namespaces.monitoring.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.namespaces.monitoring.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+
+{{- if .Values.namespaces.logging.enabled }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespaces.logging.name }}
+  labels:
+    {{- include "base.labels" . | nindent 4 }}
+    {{- with .Values.namespaces.logging.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.namespaces.logging.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+
+{{- if .Values.namespaces.production.enabled }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespaces.production.name }}
+  labels:
+    {{- include "base.labels" . | nindent 4 }}
+    {{- with .Values.namespaces.production.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.namespaces.production.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+
+{{- if .Values.namespaces.staging.enabled }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespaces.staging.name }}
+  labels:
+    {{- include "base.labels" . | nindent 4 }}
+    {{- with .Values.namespaces.staging.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.namespaces.staging.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+
+{{- if .Values.namespaces.development.enabled }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespaces.development.name }}
+  labels:
+    {{- include "base.labels" . | nindent 4 }}
+    {{- with .Values.namespaces.development.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.namespaces.development.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

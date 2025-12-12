@@ -1,0 +1,626 @@
+openapi: 3.0.0
+info:
+  title: Return Service API
+  version: 1.0.0
+  description: API for managing return requests, RMAs, return status tracking, and refund coordination
+
+servers:
+  - url: http://localhost:3010
+    description: Development server
+  - url: https://api.example.com/returns
+    description: Production server
+
+tags:
+  - name: Returns
+    description: Return request management
+  - name: Health
+    description: Health check endpoints
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check if the service is healthy
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /ready:
+    get:
+      summary: Readiness check
+      description: Check if the service is ready to accept traffic
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessStatus'
+        '503':
+          description: Service is not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessStatus'
+
+  /metrics:
+    get:
+      summary: Prometheus metrics
+      description: Get Prometheus metrics in text format
+      tags: [Health]
+      responses:
+        '200':
+          description: Metrics in Prometheus format
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/v1/returns:
+    post:
+      summary: Create a return request
+      description: Create a new return request for an order
+      tags: [Returns]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReturnRequest'
+      responses:
+        '201':
+          description: Return request created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/returns/{id}:
+    get:
+      summary: Get return request by ID
+      description: Retrieve a return request by its ID
+      tags: [Returns]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Return request ID
+      responses:
+        '200':
+          description: Return request details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: Return request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/returns/user/{userId}:
+    get:
+      summary: Get return requests by user
+      description: Retrieve all return requests for a specific user
+      tags: [Returns]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, in_transit, received, processed, closed]
+          description: Filter by status
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: Maximum number of results
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of results to skip
+      responses:
+        '200':
+          description: List of return requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/returns/{id}/approve:
+    post:
+      summary: Approve return request
+      description: Approve a return request and create RMA (Admin only)
+      tags: [Returns]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Return request ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveReturnRequest'
+      responses:
+        '200':
+          description: Return request approved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (Admin only)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Return request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/returns/{id}/status:
+    put:
+      summary: Update return status
+      description: Update the status of a return request (Admin only)
+      tags: [Returns]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Return request ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReturnStatus'
+      responses:
+        '200':
+          description: Return status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Bad request or invalid status transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (Admin only)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Return request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/returns/{id}/refund:
+    post:
+      summary: Process refund
+      description: Initiate refund processing for a return request (Admin only)
+      tags: [Returns]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Return request ID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                paymentId:
+                  type: string
+                  description: Payment ID (optional)
+      responses:
+        '200':
+          description: Refund processing initiated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (Admin only)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Return request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+          properties:
+            database:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [ok, error]
+                responseTime:
+                  type: number
+
+    ReadinessStatus:
+      type: object
+      properties:
+        ready:
+          type: boolean
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        error:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    CreateReturnRequest:
+      type: object
+      required:
+        - orderId
+        - returnReason
+        - refundMethod
+        - items
+      properties:
+        orderId:
+          type: string
+          description: Order ID
+        returnReason:
+          type: string
+          enum: [defective, wrong_item, not_as_described, changed_mind, other]
+          description: Reason for return
+        returnNotes:
+          type: string
+          description: Additional notes about the return
+        refundMethod:
+          type: string
+          enum: [original_payment, store_credit, exchange]
+          description: Preferred refund method
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReturnItemInput'
+          minItems: 1
+
+    ReturnItemInput:
+      type: object
+      required:
+        - orderItemId
+        - productId
+        - productName
+        - productSku
+        - quantity
+        - unitPrice
+        - condition
+      properties:
+        orderItemId:
+          type: string
+          description: Order item ID
+        productId:
+          type: string
+          description: Product ID
+        variantId:
+          type: string
+          description: Product variant ID (optional)
+        productName:
+          type: string
+          description: Product name
+        productSku:
+          type: string
+          description: Product SKU
+        quantity:
+          type: integer
+          minimum: 1
+          description: Quantity to return
+        unitPrice:
+          type: number
+          minimum: 0
+          description: Unit price
+        returnReason:
+          type: string
+          description: Item-specific return reason
+        condition:
+          type: string
+          enum: [new, used, damaged, defective]
+          description: Condition of the returned item
+
+    ApproveReturnRequest:
+      type: object
+      required:
+        - returnAddress
+      properties:
+        returnAddress:
+          $ref: '#/components/schemas/ReturnAddress'
+        returnInstructions:
+          type: string
+          description: Instructions for returning the item
+        expiresInDays:
+          type: integer
+          minimum: 1
+          maximum: 90
+          default: 30
+          description: Number of days until RMA expires
+
+    ReturnAddress:
+      type: object
+      required:
+        - street
+        - city
+        - postalCode
+        - country
+      properties:
+        street:
+          type: string
+          description: Street address
+        city:
+          type: string
+          description: City
+        state:
+          type: string
+          description: State or province
+        postalCode:
+          type: string
+          description: Postal/ZIP code
+        country:
+          type: string
+          description: Country code (ISO 3166-1 alpha-2)
+        name:
+          type: string
+          description: Contact name
+        phone:
+          type: string
+          description: Contact phone number
+
+    UpdateReturnStatus:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [pending, approved, rejected, in_transit, received, processed, closed]
+          description: New status
+        notes:
+          type: string
+          description: Optional notes about the status change
+
+    ReturnRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        orderId:
+          type: string
+        userId:
+          type: string
+        rmaNumber:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected, in_transit, received, processed, closed]
+        returnReason:
+          type: string
+        returnNotes:
+          type: string
+        refundMethod:
+          type: string
+        refundAmount:
+          type: number
+        currency:
+          type: string
+        requestedAt:
+          type: string
+          format: date-time
+        approvedAt:
+          type: string
+          format: date-time
+        rejectedAt:
+          type: string
+          format: date-time
+        receivedAt:
+          type: string
+          format: date-time
+        processedAt:
+          type: string
+          format: date-time
+        closedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Refund:
+      type: object
+      properties:
+        id:
+          type: string
+        returnRequestId:
+          type: string
+        paymentId:
+          type: string
+        orderId:
+          type: string
+        userId:
+          type: string
+        refundMethod:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        reason:
+          type: string
+        processedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+

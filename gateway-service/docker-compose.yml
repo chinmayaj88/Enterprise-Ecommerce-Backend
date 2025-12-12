@@ -1,0 +1,47 @@
+services:
+  gateway-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce-gateway-service
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    networks:
+      - gateway-service-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: gateway-service-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - gateway-service-redis-data:/data
+    networks:
+      - gateway-service-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  gateway-service-redis-data:
+
+networks:
+  gateway-service-network:
+    driver: bridge
+

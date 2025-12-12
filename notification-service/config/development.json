@@ -1,0 +1,13 @@
+{
+  "server": {
+    "port": 3007,
+    "env": "development"
+  },
+  "logging": {
+    "level": "debug"
+  },
+  "notification": {
+    "emailProvider": "mock"
+  }
+}
+

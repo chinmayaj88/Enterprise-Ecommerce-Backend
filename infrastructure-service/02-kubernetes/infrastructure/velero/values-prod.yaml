@@ -1,0 +1,50 @@
+# Production values for Velero
+
+global:
+  namespace: velero
+
+velero:
+  enabled: true
+  image:
+    tag: v1.12.0
+  
+  configuration:
+    backupStorageLocation:
+      bucket: velero-backups-prod
+    volumeSnapshotLocation:
+      config:
+        region: IN-HYDERABAD-1
+  
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  
+  restic:
+    enabled: true
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  
+  # Production backup schedules
+  schedules:
+    - name: daily-backup
+      schedule: "0 2 * * *"  # 2 AM daily
+      template:
+        includedNamespaces:
+          - ecommerce-production
+        ttl: "720h0m0s"  # 30 days
+    - name: weekly-backup
+      schedule: "0 3 * * 0"  # 3 AM every Sunday
+      template:
+        includedNamespaces:
+          - ecommerce-production
+        ttl: "2160h0m0s"  # 90 days
+

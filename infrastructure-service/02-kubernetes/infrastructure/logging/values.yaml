@@ -1,0 +1,177 @@
+# Default values for logging stack
+# This is a YAML-formatted file.
+
+# Global configuration
+global:
+  namespace: logging
+
+# Loki configuration
+loki:
+  enabled: true
+  namespace: logging
+  
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: ""
+  
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  
+  service:
+    type: ClusterIP
+    port: 3100
+  
+  config:
+    auth_enabled: false
+    commonConfig:
+      replication_factor: 1
+    schema_config:
+      configs:
+        - from: "2020-10-24"
+          store: boltdb-shipper
+          object_store: filesystem
+          schema: v11
+          index:
+            prefix: index_
+            period: 24h
+    storage_config:
+      boltdb_shipper:
+        active_index_directory: /loki/index
+        cache_location: /loki/index_cache
+      filesystem:
+        directory: /loki/chunks
+    limits_config:
+      enforce_metric_name: false
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h
+      ingestion_rate_mb: 10
+      ingestion_burst_size_mb: 20
+      max_query_length: 721h
+      max_query_parallelism: 32
+      max_streams_per_user: 10000
+      max_line_size: 256KB
+      max_line_size_truncate: false
+      max_entries_limit_per_query: 5000
+      max_cache_freshness_per_query: 10m
+      max_query_series: 500
+      max_global_streams_per_user: 0
+      max_concurrent_tail_requests: 10
+      max_query_lookback: 0s
+      querier:
+        query_timeout: 300s
+        max_concurrent: 20
+      ingestion_tenant_shard_size: 0
+      split_queries_by_interval: 15m
+      volume_enabled: false
+      volume_max_series: 0
+      ruler:
+        evaluation_interval: 1m
+        poll_interval: 10s
+        rule_path: /loki/rules
+        storage:
+          type: local
+          local:
+            directory: /loki/rules
+        ring:
+          kvstore:
+            store: inmemory
+        enable_api: true
+        enable_alertmanager_v2: true
+        alertmanager_url: http://alertmanager.monitoring.svc.cluster.local:9093
+        alertmanager_discovery: true
+        alertmanager_refresh_interval: 10s
+        alertmanager_notification_queue_capacity: 10000
+        alertmanager_notification_timeout: 10s
+        enable_legacy_rule_path: false
+        ring:
+          kvstore:
+            store: inmemory
+        enable_api: true
+    chunk_store_config:
+      max_look_back_period: 0s
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 720h
+    compactor:
+      working_directory: /loki/compactor
+      shared_store: filesystem
+      compaction_interval: 10m
+      retention_enabled: true
+      retention_delete_delay: 2h
+      retention_delete_worker_count: 150
+      max_compaction_parallelism: 1
+
+# Promtail configuration
+promtail:
+  enabled: true
+  namespace: logging
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  
+  config:
+    clients:
+      - url: http://loki.logging.svc.cluster.local:3100/loki/api/v1/push
+    
+    server:
+      http_listen_port: 3101
+      grpc_listen_port: 9096
+    
+    positions:
+      filename: /tmp/positions.yaml
+    
+    target_config:
+      sync_period: 10s
+    
+    scrape_configs:
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+        pipeline_stages:
+          - docker: {}
+        relabel_configs:
+          - source_labels:
+              - __meta_kubernetes_pod_controller_name
+            regex: ([0-9a-z-.]+?)(-[0-9a-f]{8,10})?
+            action: replace
+            target_label: __tmp_controller_name
+          - source_labels:
+              - __meta_kubernetes_label_app_kubernetes_io_name
+              - __meta_kubernetes_label_app
+              - __tmp_controller_name
+              - __meta_kubernetes_pod_name
+            regex: ^;*([^;]+)(;.*)?$
+            action: replace
+            target_label: app
+          - source_labels:
+              - __meta_kubernetes_namespace
+            target_label: namespace
+          - source_labels:
+              - __meta_kubernetes_pod_name
+            target_label: pod
+          - source_labels:
+              - __meta_kubernetes_pod_container_name
+            target_label: container
+          - replacement: /var/log/pods/*$1/*.log
+            separator: /
+            source_labels:
+              - __meta_kubernetes_pod_uid
+              - __meta_kubernetes_pod_container_name
+            target_label: __path__
+          - regex: \/(var)\/(log)\/(pods|containers)
+            replacement: /var/log/pods
+            source_labels:
+              - __path__
+            target_label: __path__
+

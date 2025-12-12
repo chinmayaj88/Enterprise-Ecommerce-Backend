@@ -1,0 +1,14 @@
+apiVersion: v2
+name: autoscaling
+description: A Helm chart for Autoscaling Components - Cluster Autoscaler and VPA
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - autoscaling
+  - cluster-autoscaler
+  - vpa
+  - vertical-pod-autoscaler
+maintainers:
+  - name: DevOps Team
+

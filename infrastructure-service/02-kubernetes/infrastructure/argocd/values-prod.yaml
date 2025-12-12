@@ -1,0 +1,79 @@
+# Production values for ArgoCD
+
+global:
+  namespace: argocd
+
+argocd:
+  enabled: true
+  
+  server:
+    replicas: 3  # High availability
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+      memory: 2Gi
+    ingress:
+      enabled: true
+      hosts:
+        - host: argocd.yourdomain.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - secretName: argocd-tls-secret
+          hosts:
+            - argocd.yourdomain.com
+  
+  controller:
+    replicas: 2  # High availability
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+  
+  repoServer:
+    replicas: 2  # High availability
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+  
+  applicationSet:
+    enabled: true
+    replicas: 2
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  
+  redis:
+    enabled: true
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  
+  configs:
+    secret:
+      # Use secret for admin password in production
+      argocdServerAdminPassword: ""  # Set via secret
+      existingSecret: argocd-secret
+  
+  dex:
+    enabled: true  # Enable SSO in production
+

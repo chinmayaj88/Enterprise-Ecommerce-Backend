@@ -1,0 +1,48 @@
+{
+  "server": {
+    "port": 3007,
+    "env": "staging",
+    "requestTimeout": 30000,
+    "shutdownTimeout": 30000,
+    "maxRequestSize": "10mb"
+  },
+  "database": {
+    "url": ""
+  },
+  "redis": {
+    "url": "",
+    "cacheTtl": 3600
+  },
+  "jwt": {
+    "secret": ""
+  },
+  "rateLimit": {
+    "windowMs": 900000,
+    "maxRequests": 100
+  },
+  "cors": {
+    "allowedOrigins": []
+  },
+  "logging": {
+    "level": "warn"
+  },
+  "notification": {
+    "emailProvider": "sendgrid",
+    "smsProvider": "twilio",
+    "pushProvider": "mock",
+    "retryAttempts": 3,
+    "retryDelayMs": 1000,
+    "maxNotificationsPerBatch": 100
+  },
+  "services": {
+    "authServiceUrl": "http://auth-service:3001",
+    "userServiceUrl": "http://user-service:3002",
+    "frontendUrl": ""
+  },
+  "events": {
+    "publisherType": "oci-streaming",
+    "consumerType": "oci-queue",
+    "ociRegion": "IN-HYDERABAD-1"
+  }
+}
+

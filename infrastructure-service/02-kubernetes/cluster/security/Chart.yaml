@@ -1,0 +1,15 @@
+apiVersion: v2
+name: security
+description: A Helm chart for Security Components - Pod Security Standards, RBAC, and Trivy
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - security
+  - pod-security
+  - rbac
+  - trivy
+  - scanning
+maintainers:
+  - name: DevOps Team
+

@@ -1,0 +1,40 @@
+{
+  "server": {
+    "port": 3000,
+    "env": "development",
+    "requestTimeout": 30000,
+    "shutdownTimeout": 30000,
+    "maxRequestSize": "10mb",
+    "proxyTimeout": 25000
+  },
+  "jwt": {
+    "secret": ""
+  },
+  "rateLimit": {
+    "windowMs": 900000,
+    "maxRequests": 100,
+    "authMaxRequests": 5
+  },
+  "cors": {
+    "allowedOrigins": []
+  },
+  "logging": {
+    "level": "info"
+  },
+  "redis": {
+    "url": ""
+  },
+  "services": {
+    "authServiceUrl": "http://localhost:3001",
+    "userServiceUrl": "http://localhost:3002",
+    "productServiceUrl": "http://localhost:3003",
+    "cartServiceUrl": "http://localhost:3006",
+    "orderServiceUrl": "http://localhost:3007",
+    "paymentServiceUrl": "http://localhost:3006",
+    "notificationServiceUrl": "http://localhost:3009",
+    "discountServiceUrl": "http://localhost:3008",
+    "shippingServiceUrl": "http://localhost:3007",
+    "returnServiceUrl": "http://localhost:3010"
+  }
+}
+

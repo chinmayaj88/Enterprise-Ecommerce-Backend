@@ -1,0 +1,28 @@
+{
+  "server": {
+    "port": 3008,
+    "env": "development",
+    "requestTimeout": 30000,
+    "shutdownTimeout": 30000,
+    "maxRequestSize": "10mb"
+  },
+  "database": {
+    "url": "postgresql://user:password@localhost:5432/discount_db"
+  },
+  "jwt": {
+    "secret": "your-secret-key-change-in-production"
+  },
+  "redis": {
+    "url": "redis://localhost:6379"
+  },
+  "rateLimit": {
+    "windowMs": 900000,
+    "maxRequests": 100
+  },
+  "cors": {
+    "allowedOrigins": []
+  },
+  "logging": {
+    "level": "info"
+  }
+}

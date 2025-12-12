@@ -1,0 +1,18 @@
+apiVersion: v2
+name: shipping-service
+description: A Helm chart for Shipping Service - Shipping service for managing shipping rates, carriers, and shipment tracking for ecommerce platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - shipping
+  - carrier
+  - tracking
+  - ecommerce
+  - microservices
+maintainers:
+  - name: DevOps Team
+home: https://github.com/yourorg/ecommerce
+sources:
+  - https://github.com/yourorg/ecommerce
+

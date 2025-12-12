@@ -1,0 +1,206 @@
+{{- if .Values.vpa.enabled }}
+{{- if .Values.vpa.recommender.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vpa-recommender
+  namespace: {{ .Values.vpa.namespace }}
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+    app: vpa-recommender
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vpa-recommender
+  template:
+    metadata:
+      labels:
+        app: vpa-recommender
+    spec:
+      serviceAccountName: vpa-recommender
+      containers:
+        - name: recommender
+          image: registry.k8s.io/autoscaling/vpa-recommender:0.14.0
+          {{- with .Values.vpa.recommender.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vpa-recommender
+  namespace: {{ .Values.vpa.namespace }}
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vpa-recommender
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+      - nodes
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["*"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vpa-recommender
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vpa-recommender
+subjects:
+  - kind: ServiceAccount
+    name: vpa-recommender
+    namespace: {{ .Values.vpa.namespace }}
+{{- end }}
+
+{{- if .Values.vpa.updater.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vpa-updater
+  namespace: {{ .Values.vpa.namespace }}
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+    app: vpa-updater
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vpa-updater
+  template:
+    metadata:
+      labels:
+        app: vpa-updater
+    spec:
+      serviceAccountName: vpa-updater
+      containers:
+        - name: updater
+          image: registry.k8s.io/autoscaling/vpa-updater:0.14.0
+          {{- with .Values.vpa.updater.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vpa-updater
+  namespace: {{ .Values.vpa.namespace }}
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vpa-updater
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - replicasets
+    verbs: ["get", "list", "watch", "patch"]
+  - apiGroups: [""]
+    resources:
+      - pods
+    verbs: ["get", "list", "watch", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vpa-updater
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vpa-updater
+subjects:
+  - kind: ServiceAccount
+    name: vpa-updater
+    namespace: {{ .Values.vpa.namespace }}
+{{- end }}
+
+{{- if .Values.vpa.admissionController.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vpa-admission-controller
+  namespace: {{ .Values.vpa.namespace }}
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+    app: vpa-admission-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vpa-admission-controller
+  template:
+    metadata:
+      labels:
+        app: vpa-admission-controller
+    spec:
+      serviceAccountName: vpa-admission-controller
+      containers:
+        - name: admission-controller
+          image: registry.k8s.io/autoscaling/vpa-admission-controller:0.14.0
+          {{- with .Values.vpa.admissionController.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vpa-admission-controller
+  namespace: {{ .Values.vpa.namespace }}
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vpa-admission-controller
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["autoscaling.k8s.io"]
+    resources:
+      - verticalpodautoscalers
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vpa-admission-controller
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vpa-admission-controller
+subjects:
+  - kind: ServiceAccount
+    name: vpa-admission-controller
+    namespace: {{ .Values.vpa.namespace }}
+{{- end }}
+{{- end }}
+

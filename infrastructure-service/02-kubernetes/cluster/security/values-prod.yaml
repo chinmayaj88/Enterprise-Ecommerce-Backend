@@ -1,0 +1,29 @@
+# Production values for security
+
+podSecurity:
+  enabled: true
+  enforce: restricted
+  audit: restricted
+  warn: restricted
+  namespaces:
+    - gateway-service
+    - auth-service
+    - ecommerce-production
+    - monitoring
+    - logging
+
+rbac:
+  enabled: true
+
+trivy:
+  enabled: true
+  image:
+    tag: latest
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+

@@ -1,0 +1,9 @@
+{{- if .Values.vpa.enabled }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.vpa.namespace }}
+  labels:
+    {{- include "autoscaling.labels" . | nindent 4 }}
+{{- end }}
+

@@ -1,0 +1,173 @@
+// Prisma schema for payment-service
+// This service manages payment processing, transactions, refunds, and payment methods
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Payment entity - Main payment records
+model Payment {
+  id                String   @id @default(cuid())
+  orderId           String   // References order-service orders.id (no FK)
+  userId            String   // References auth-service users.id (no FK)
+  paymentMethodId   String?  // References payment_methods.id
+  status            String   @default("pending") // pending, processing, succeeded, failed, cancelled, refunded
+  paymentProvider   String   // STRIPE, PAYPAL, MOCK
+  providerPaymentId String?  @unique // Provider transaction ID
+  amount            Decimal  @db.Decimal(10, 2)
+  currency          String   @default("USD")
+  description       String?  @db.VarChar(500)
+  metadata          Json?
+  processedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  paymentMethod     PaymentMethod?      @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  transactions      PaymentTransaction[]
+  refunds          Refund[]
+  webhooks          PaymentWebhook[]
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([status])
+  @@index([amount])
+  @@index([createdAt])
+  @@index([userId, status, createdAt])
+  @@index([status, createdAt])
+  @@map("payments")
+}
+
+// Payment Transaction - Detailed transaction history
+model PaymentTransaction {
+  id                    String   @id @default(cuid())
+  paymentId             String
+  transactionType       String   // CHARGE, REFUND, VOID
+  status                String   // PENDING, SUCCEEDED, FAILED
+  providerTransactionId String?
+  amount                Decimal  @db.Decimal(10, 2)
+  currency              String
+  providerResponse      Json?
+  processedAt           DateTime?
+  createdAt             DateTime @default(now())
+
+  // Relations
+  payment               Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@index([createdAt])
+  @@index([paymentId, createdAt])
+  @@map("payment_transactions")
+}
+
+// Refund entity
+model Refund {
+  id              String   @id @default(cuid())
+  paymentId       String
+  orderId         String   // References order-service orders.id (no FK)
+  reason          String?  @db.VarChar(255)
+  amount          Decimal  @db.Decimal(10, 2)
+  currency        String   @default("USD")
+  status          String   @default("pending") // pending, processing, completed, failed
+  providerRefundId String?
+  metadata        Json?
+  processedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  payment         Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("refunds")
+}
+
+// Payment Method - Stored payment methods (tokenized)
+model PaymentMethod {
+  id            String   @id @default(cuid())
+  userId        String   // References auth-service users.id (no FK)
+  type          String   // credit_card, debit_card, paypal, bank_account
+  provider      String   // STRIPE, PAYPAL
+  providerToken String?  @db.VarChar(500) // Encrypted provider token
+  last4         String?  @db.VarChar(4)
+  cardType      String?  @db.VarChar(20) // visa, mastercard, amex
+  expiryMonth   String?  @db.VarChar(2)
+  expiryYear    String?  @db.VarChar(4)
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  payments      Payment[]
+
+  @@index([userId])
+  @@map("payment_methods")
+}
+
+// Payment Webhook - Webhook logs from payment providers
+model PaymentWebhook {
+  id                String   @id @default(cuid())
+  paymentId         String?
+  provider          String   // STRIPE, PAYPAL
+  eventType         String   @db.VarChar(100)
+  providerEventId   String   @unique // Provider event ID (for idempotency)
+  payload           Json
+  status            String   @default("pending") // pending, processed, failed
+  error             String?  @db.Text
+  processedAt       DateTime?
+  createdAt         DateTime @default(now())
+
+  // Relations
+  payment           Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("payment_webhooks")
+}
+
+// Idempotency Key - For idempotent payment processing
+model IdempotencyKey {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  paymentId String
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([key])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
+}
+
+// Audit Log - Payment audit trail
+model AuditLog {
+  id        String   @id @default(cuid())
+  eventType String   // PAYMENT_CREATED, PAYMENT_PROCESSED, PAYMENT_FAILED, REFUND_INITIATED, etc.
+  userId    String?  // References auth-service users.id
+  paymentId String?  // References payments.id
+  orderId   String?  // References order-service orders.id
+  amount    Decimal? @db.Decimal(10, 2)
+  currency  String?
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+  success   Boolean
+  error     String?  @db.Text
+  timestamp DateTime @default(now())
+
+  @@index([eventType])
+  @@index([userId])
+  @@index([paymentId])
+  @@index([orderId])
+  @@index([timestamp])
+  @@index([userId, timestamp])
+  @@map("audit_logs")
+}
+

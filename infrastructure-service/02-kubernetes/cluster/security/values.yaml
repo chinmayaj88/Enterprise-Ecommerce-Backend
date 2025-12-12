@@ -1,0 +1,58 @@
+# Default values for security components
+# This is a YAML-formatted file.
+
+# Pod Security Standards configuration
+podSecurity:
+  enabled: true
+  
+  # Pod security levels: privileged, baseline, restricted
+  enforce: restricted
+  audit: restricted
+  warn: restricted
+  
+  # Namespaces to apply pod security standards
+  namespaces:
+    - gateway-service
+    - auth-service
+    - ecommerce-production
+    - ecommerce-staging
+    - ecommerce-development
+
+# RBAC Policies configuration
+rbac:
+  enabled: true
+  
+  # Service account permissions
+  serviceAccounts: []
+  # Example:
+  # serviceAccounts:
+  #   - name: gateway-service-sa
+  #     namespace: gateway-service
+  #     clusterRole: cluster-reader
+
+# Trivy Scanner configuration
+trivy:
+  enabled: true
+  namespace: trivy-system
+  
+  image:
+    repository: aquasec/trivy
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  
+  service:
+    type: ClusterIP
+    port: 8080
+  
+  serviceAccount:
+    create: true
+    name: trivy-scanner
+

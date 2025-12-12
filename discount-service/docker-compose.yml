@@ -1,0 +1,79 @@
+services:
+  discount-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce-discount-service
+    ports:
+      - "${PORT:-3008}:3008"
+    environment:
+      - NODE_ENV=development
+      - PORT=3008
+      - DATABASE_URL=postgresql://discount_user:discount_pass@postgres:5432/discount_db
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-dev-jwt-secret-minimum-32-characters-long}
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - discount-service-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3008/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecommerce-discount-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-discount_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-discount_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-discount_db}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - discount-postgres-data:/var/lib/postgresql/data
+      - ./prisma:/docker-entrypoint-initdb.d
+    networks:
+      - discount-service-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-discount_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: ecommerce-discount-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6380}:6379"
+    volumes:
+      - discount-redis-data:/data
+    networks:
+      - discount-service-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  discount-postgres-data:
+    driver: local
+  discount-redis-data:
+    driver: local
+
+networks:
+  discount-service-network:
+    driver: bridge
+

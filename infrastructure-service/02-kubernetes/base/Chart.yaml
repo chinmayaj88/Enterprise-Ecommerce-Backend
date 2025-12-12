@@ -1,0 +1,14 @@
+apiVersion: v2
+name: base
+description: A Helm chart for Base Kubernetes Resources - Namespaces and Priority Classes
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - base
+  - namespaces
+  - priority-classes
+  - kubernetes
+maintainers:
+  - name: DevOps Team
+

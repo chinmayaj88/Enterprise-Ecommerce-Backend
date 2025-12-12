@@ -1,0 +1,51 @@
+# ============================================================================
+# PAYMENT-SERVICE TERRAFORM VARIABLES - Example Configuration
+# ============================================================================
+# Copy this file to terraform.tfvars and fill in your values
+# NEVER commit terraform.tfvars to version control!
+# ============================================================================
+
+# Foundation References (get from foundation outputs)
+compartment_id      = "ocid1.compartment.oc1..xxxxx"
+cluster_id          = "ocid1.cluster.oc1.xxxxx"
+private_subnet_id   = "ocid1.subnet.oc1.xxxxx"
+vault_id            = "ocid1.vault.oc1.xxxxx"
+vault_master_key_id = "ocid1.key.oc1.xxxxx"
+oci_region          = "us-ashburn-1"
+oci_tenancy_ocid    = "ocid1.tenancy.oc1..xxxxx"
+cluster_endpoint    = "https://xxxxx.xxxxx.xxxxx.oraclecloud.com:6443"
+
+# Project Information
+project_name = "ecommerce"
+environment  = "production"
+service_name = "payment-service"
+
+# Kubernetes Configuration
+namespace       = "payment-service"
+service_replicas = 2
+
+# Secrets (sensitive - use strong values in production)
+# Generate database URL: postgresql://user:password@host:port/database
+database_url = "postgresql://payment_user:STRONG_PASSWORD@payment-db-host:5432/payment_db"
+
+# Generate Redis URL: redis://user:password@host:port
+redis_url = "redis://payment-redis-host:6379"
+
+# Payment Gateway Secrets (get from Stripe and PayPal dashboards)
+stripe_secret_key     = "sk_live_xxxxx"  # Get from Stripe Dashboard
+stripe_webhook_secret = "whsec_xxxxx"   # Get from Stripe Dashboard
+paypal_client_id      = "xxxxx"         # Get from PayPal Developer Dashboard
+paypal_client_secret  = "xxxxx"          # Get from PayPal Developer Dashboard
+
+# Service URLs (internal Kubernetes service names)
+order_service_url = "http://order-service:3005"
+auth_service_url  = "http://auth-service:3001"
+
+# Tags
+tags = {
+  Project     = "ecommerce"
+  ManagedBy   = "terraform"
+  Service     = "payment-service"
+  Environment = "production"
+}
+

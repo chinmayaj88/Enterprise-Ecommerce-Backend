@@ -1,0 +1,46 @@
+# ============================================================================
+# RETURN-SERVICE TERRAFORM VARIABLES - Example Configuration
+# ============================================================================
+# Copy this file to terraform.tfvars and fill in your values
+# NEVER commit terraform.tfvars to version control!
+# ============================================================================
+
+# Foundation References (get from foundation outputs)
+compartment_id      = "ocid1.compartment.oc1..xxxxx"
+cluster_id          = "ocid1.cluster.oc1.xxxxx"
+private_subnet_id   = "ocid1.subnet.oc1.xxxxx"
+vault_id            = "ocid1.vault.oc1.xxxxx"
+vault_master_key_id = "ocid1.key.oc1.xxxxx"
+oci_region          = "us-ashburn-1"
+oci_tenancy_ocid    = "ocid1.tenancy.oc1..xxxxx"
+cluster_endpoint    = "https://xxxxx.xxxxx.xxxxx.oraclecloud.com:6443"
+
+# Project Information
+project_name = "ecommerce"
+environment  = "production"
+service_name = "return-service"
+
+# Kubernetes Configuration
+namespace       = "return-service"
+service_replicas = 2
+
+# Secrets (sensitive - use strong values in production)
+# Generate database URL: postgresql://user:password@host:port/database
+database_url = "postgresql://return_user:STRONG_PASSWORD@return-db-host:5432/return_db"
+
+# Generate Redis URL: redis://user:password@host:port
+redis_url = "redis://return-redis-host:6379"
+
+# Service URLs (internal Kubernetes service names)
+auth_service_url    = "http://auth-service:3001"
+order_service_url   = "http://order-service:3007"
+payment_service_url = "http://payment-service:3006"
+
+# Tags
+tags = {
+  Project     = "ecommerce"
+  ManagedBy   = "terraform"
+  Service     = "return-service"
+  Environment = "production"
+}
+

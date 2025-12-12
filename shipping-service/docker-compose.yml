@@ -1,0 +1,81 @@
+services:
+  shipping-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce-shipping-service
+    ports:
+      - "${PORT:-3009}:3009"
+    environment:
+      - NODE_ENV=development
+      - PORT=3009
+      - DATABASE_URL=postgresql://shipping_user:shipping_pass@postgres:5432/shipping_db
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-dev-jwt-secret-minimum-32-characters-long}
+      - ORDER_SERVICE_URL=${ORDER_SERVICE_URL:-http://localhost:3005}
+      - PRODUCT_SERVICE_URL=${PRODUCT_SERVICE_URL:-http://localhost:3003}
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - shipping-service-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3009/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecommerce-shipping-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-shipping_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-shipping_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-shipping_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - shipping-postgres-data:/var/lib/postgresql/data
+      - ./prisma:/docker-entrypoint-initdb.d
+    networks:
+      - shipping-service-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-shipping_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: ecommerce-shipping-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - shipping-redis-data:/data
+    networks:
+      - shipping-service-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  shipping-postgres-data:
+    driver: local
+  shipping-redis-data:
+    driver: local
+
+networks:
+  shipping-service-network:
+    driver: bridge
+

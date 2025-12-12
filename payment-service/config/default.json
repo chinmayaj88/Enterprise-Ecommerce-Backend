@@ -1,0 +1,61 @@
+{
+  "server": {
+    "port": 3005,
+    "env": "development",
+    "requestTimeout": 30000,
+    "shutdownTimeout": 30000,
+    "maxRequestSize": "10mb"
+  },
+  "database": {
+    "url": "postgresql://user:password@localhost:5432/payment_db"
+  },
+  "jwt": {
+    "secret": "your-secret-key-change-in-production-min-32-chars"
+  },
+  "redis": {
+    "url": "redis://localhost:6379",
+    "cacheTtl": 3600
+  },
+  "encryption": {
+    "key": "your-encryption-key-change-in-production-min-32-chars"
+  },
+  "paymentProviders": {
+    "default": "mock",
+    "stripe": {
+      "secretKey": "",
+      "webhookSecret": "",
+      "webhookIps": []
+    },
+    "paypal": {
+      "clientId": "",
+      "clientSecret": "",
+      "webhookId": "",
+      "webhookIps": []
+    }
+  },
+  "externalServices": {
+    "orderServiceUrl": "http://localhost:3004",
+    "userServiceUrl": "http://localhost:3002"
+  },
+  "rateLimit": {
+    "windowMs": 900000,
+    "maxRequests": 100
+  },
+  "cors": {
+    "allowedOrigins": []
+  },
+  "logging": {
+    "level": "info"
+  },
+  "eventing": {
+    "publisherType": "mock",
+    "consumerType": "mock",
+    "oci": {
+      "compartmentId": "",
+      "streamId": "",
+      "queueId": "",
+      "region": "us-ashburn-1"
+    }
+  }
+}
+

@@ -1,0 +1,131 @@
+// Prisma schema for discount-service
+// This service manages coupons, promotions, discount rules, and usage tracking
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Coupon entity - Coupon code definitions
+model Coupon {
+  id                  String   @id @default(cuid())
+  code                String   @unique @db.VarChar(50)
+  name                String   @db.VarChar(255)
+  description         String?  @db.Text
+  type                String   // percentage, fixed_amount, free_shipping
+  discountValue       Decimal  @db.Decimal(10, 2)
+  minimumAmount       Decimal  @default(0) @db.Decimal(10, 2)
+  maximumDiscount     Decimal? @db.Decimal(10, 2)
+  currency            String   @default("USD") @db.VarChar(3)
+  usageLimit          Int?
+  usageCount           Int      @default(0)
+  usageLimitPerUser    Int?
+  startsAt             DateTime?
+  endsAt               DateTime?
+  isActive             Boolean  @default(true)
+  applicableProducts   Json?    // Array of product IDs
+  applicableCategories  Json?    // Array of category IDs
+  excludedProducts      Json?    // Array of excluded product IDs
+  metadata             Json?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relations
+  usage                CouponUsage[]
+
+  @@index([code])
+  @@index([isActive])
+  @@index([startsAt])
+  @@index([endsAt])
+  @@map("coupons")
+}
+
+// Coupon Usage - Track coupon usage
+model CouponUsage {
+  id            String   @id @default(cuid())
+  couponId     String
+  userId       String?   // References auth-service users.id (nullable for guest usage)
+  orderId      String?   // References order-service orders.id
+  discountAmount Decimal  @db.Decimal(10, 2)
+  usedAt        DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  // Relations
+  coupon        Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  @@index([couponId])
+  @@index([userId])
+  @@index([usedAt])
+  @@index([couponId, userId])
+  @@index([couponId, usedAt])
+  @@map("coupon_usage")
+}
+
+// Promotion entity - Promotional campaign definitions
+model Promotion {
+  id            String   @id @default(cuid())
+  name          String   @db.VarChar(255)
+  description   String?  @db.Text
+  type          String   @db.VarChar(50) // buy_x_get_y, bundle, volume_discount
+  status        String   @default("draft") @db.VarChar(20) // draft, active, paused, expired
+  startsAt      DateTime?
+  endsAt        DateTime?
+  isActive      Boolean  @default(false)
+  configuration Json     // Promotion-specific configuration
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  rules         PromotionRule[]
+  usage         PromotionUsage[]
+
+  @@index([status])
+  @@index([isActive])
+  @@index([startsAt])
+  @@index([endsAt])
+  @@map("promotions")
+}
+
+// Promotion Rule - Promotion rule definitions
+model PromotionRule {
+  id          String   @id @default(cuid())
+  promotionId String
+  ruleType    String   @db.VarChar(50) // buy_quantity, spend_amount, product_match, category_match
+  conditions  Json
+  actions     Json
+  priority    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@index([promotionId])
+  @@index([promotionId, priority])
+  @@map("promotion_rules")
+}
+
+// Promotion Usage - Track promotion usage
+model PromotionUsage {
+  id            String   @id @default(cuid())
+  promotionId   String
+  userId        String   // References auth-service users.id
+  orderId       String?  // References order-service orders.id
+  discountAmount Decimal  @db.Decimal(10, 2)
+  usedAt        DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  // Relations
+  promotion     Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@index([promotionId])
+  @@index([userId])
+  @@index([usedAt])
+  @@map("promotion_usage")
+}
+

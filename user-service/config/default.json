@@ -1,0 +1,43 @@
+{
+  "server": {
+    "port": 3002,
+    "env": "development",
+    "requestTimeout": 30000,
+    "shutdownTimeout": 30000,
+    "maxRequestSize": "10mb"
+  },
+  "database": {
+    "url": "postgresql://user:password@localhost:5432/user_db"
+  },
+  "jwt": {
+    "secret": "your-secret-key-change-in-production"
+  },
+  "redis": {
+    "url": "redis://localhost:6379",
+    "cacheTtl": 3600
+  },
+  "rateLimit": {
+    "windowMs": 900000,
+    "maxRequests": 100
+  },
+  "cors": {
+    "allowedOrigins": []
+  },
+  "logging": {
+    "level": "info"
+  },
+  "externalServices": {
+    "authServiceUrl": "http://localhost:3001"
+  },
+  "eventing": {
+    "publisherType": "mock",
+    "consumerType": "mock",
+    "oci": {
+      "compartmentId": "",
+      "streamId": "",
+      "queueId": "",
+      "region": "us-ashburn-1"
+    }
+  }
+}
+

@@ -1,0 +1,12 @@
+{
+  "server": {
+    "env": "development"
+  },
+  "logging": {
+    "level": "debug"
+  },
+  "cors": {
+    "allowedOrigins": ["*"]
+  }
+}
+

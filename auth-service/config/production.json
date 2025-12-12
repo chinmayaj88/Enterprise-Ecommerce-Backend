@@ -1,0 +1,14 @@
+{
+  "server": {
+    "env": "production"
+  },
+  "auth": {
+    "cookieSecure": true
+  },
+  "logging": {
+    "level": "warn"
+  },
+  "cors": {
+    "allowedOrigins": []
+  }
+}

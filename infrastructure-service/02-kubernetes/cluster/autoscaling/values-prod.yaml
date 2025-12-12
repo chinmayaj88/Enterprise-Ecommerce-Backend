@@ -1,0 +1,54 @@
+# Production values for autoscaling
+
+global:
+  namespace: kube-system
+
+clusterAutoscaler:
+  enabled: true
+  image:
+    tag: v1.28.0
+  nodePool:
+    minNodes: 3
+    maxNodes: 20
+  scaleDown:
+    delayAfterAdd: 10m
+    unneededTime: 10m
+    unremovableNodeRecheckTimeout: 5m
+  resources:
+    requests:
+      cpu: 200m
+      memory: 500Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+vpa:
+  enabled: true
+  recommender:
+    enabled: true
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  updater:
+    enabled: true
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 512Mi
+  admissionController:
+    enabled: true
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 512Mi
+
